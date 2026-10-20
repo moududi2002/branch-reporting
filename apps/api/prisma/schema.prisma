@@ -1,0 +1,439 @@
+// apps/api/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  SUPER_ADMIN
+  BRANCH_ADMIN
+  THANA_ADMIN
+  VIEWER
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REVISION_REQUESTED
+  REJECTED
+}
+
+enum ReportTypeCode {
+  MONTHLY
+  FINANCIAL
+  INSTITUTION_MATRIX
+  COMMENT
+  TOUR
+}
+
+enum PeriodStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum FieldType {
+  NUMBER
+  TEXT
+  TEXTAREA
+  SELECT
+  DATE
+  BOOLEAN
+  TABLE_ROWS
+}
+
+enum CalculationRule {
+  NONE
+  ADDITIVE
+  SNAPSHOT_LAST
+  WEIGHTED_AVERAGE
+  DIFFERENCE
+  FORMULA
+}
+
+enum AggregationRule {
+  SNAPSHOT_LAST
+  ADDITIVE
+  WEIGHTED_AVERAGE
+  TEXT_JOIN
+  NONE
+}
+
+enum ApprovalAction {
+  SUBMIT
+  APPROVE
+  REJECT
+  REQUEST_REVISION
+  RESUBMIT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SUBMIT
+  APPROVE
+  REJECT
+  REQUEST_REVISION
+  LOGIN
+  LOGOUT
+  IMPORT
+  PERIOD_OPEN
+  PERIOD_CLOSE
+}
+
+// ---------- Organisation ----------
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  thanas            Thana[]
+  users             User[]
+  reportingPeriods  ReportingPeriod[]
+  nameSnapshots     BranchNameSnapshot[]
+
+  @@map("branches")
+}
+
+model BranchNameSnapshot {
+  id         String   @id @default(cuid())
+  branchId   String
+  name       String
+  capturedAt DateTime @default(now())
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([branchId])
+  @@map("branch_name_snapshots")
+}
+
+model Thana {
+  id        String   @id @default(cuid())
+  branchId  String
+  name      String
+  code      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branch        Branch             @relation(fields: [branchId], references: [id])
+  users         User[]
+  reports       Report[]
+  nameSnapshots ThanaNameSnapshot[]
+
+  @@index([branchId])
+  @@map("thanas")
+}
+
+model ThanaNameSnapshot {
+  id         String   @id @default(cuid())
+  thanaId    String
+  name       String
+  capturedAt DateTime @default(now())
+
+  thana Thana @relation(fields: [thanaId], references: [id])
+
+  @@index([thanaId])
+  @@map("thana_name_snapshots")
+}
+
+// ---------- Users & Sessions ----------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         Role
+  branchId     String?
+  thanaId      String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  branch    Branch? @relation(fields: [branchId], references: [id])
+  thana     Thana?  @relation(fields: [thanaId], references: [id])
+  sessions  Session[]
+  auditLogs AuditLog[]
+
+  @@index([branchId])
+  @@index([thanaId])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  ip        String?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ---------- Sessions (academic) & Reporting Periods ----------
+
+model AcademicSession {
+  id        String   @id @default(cuid())
+  label     String   @unique // e.g. "২০২৪"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  reportingPeriods ReportingPeriod[]
+
+  @@map("academic_sessions")
+}
+
+model ReportingPeriod {
+  id                 String       @id @default(cuid())
+  branchId           String
+  academicSessionId  String
+  reportTypeId       String
+  label              String       // e.g. "মার্চ ২০২৪"
+  periodStart        DateTime
+  periodEnd          DateTime
+  submissionDeadline DateTime
+  revisionDeadline   DateTime
+  status             PeriodStatus @default(OPEN)
+  autoCloseOnDeadline Boolean     @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  branch          Branch          @relation(fields: [branchId], references: [id])
+  academicSession AcademicSession @relation(fields: [academicSessionId], references: [id])
+  reportType      ReportType      @relation(fields: [reportTypeId], references: [id])
+  reports         Report[]
+
+  @@unique([branchId, reportTypeId, periodStart, periodEnd])
+  @@index([branchId])
+  @@map("reporting_periods")
+}
+
+// ---------- Report Types & Templates ----------
+
+model ReportType {
+  id          String         @id @default(cuid())
+  code        ReportTypeCode @unique
+  nameBn      String
+  description String?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+
+  templates        ReportTemplate[]
+  reportingPeriods ReportingPeriod[]
+
+  @@map("report_types")
+}
+
+model ReportTemplate {
+  id           String         @id @default(cuid())
+  reportTypeId String
+  version      Int
+  nameBn       String
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+
+  reportType ReportType         @relation(fields: [reportTypeId], references: [id])
+  sections   ReportSection[]
+  fields     ReportField[]
+
+  @@unique([reportTypeId, version])
+  @@map("report_templates")
+}
+
+model ReportSection {
+  id               String   @id @default(cuid())
+  reportTemplateId String
+  key              String
+  titleBn          String
+  order            Int
+  layoutMeta       Json?    // rowspan/colspan/vertical/color/grid metadata for print layout
+
+  reportTemplate ReportTemplate @relation(fields: [reportTemplateId], references: [id])
+  fields         ReportField[]
+
+  @@unique([reportTemplateId, key])
+  @@map("report_sections")
+}
+
+model ReportField {
+  id               String          @id @default(cuid())
+  reportTemplateId String
+  sectionId        String?
+  key              String
+  labelBn          String
+  fieldType        FieldType
+  calculationRule  CalculationRule @default(NONE)
+  aggregationRule  AggregationRule @default(NONE)
+  isReadOnly       Boolean         @default(false)
+  isRequired       Boolean         @default(false)
+  order            Int
+  options          Json?           // for SELECT
+  formula          String?         // expression key for FORMULA rule
+  layoutMeta       Json?           // rowspan/colspan/vertical/header-group metadata
+
+  reportTemplate ReportTemplate  @relation(fields: [reportTemplateId], references: [id])
+  section        ReportSection?  @relation(fields: [sectionId], references: [id])
+
+  @@unique([reportTemplateId, key])
+  @@index([sectionId])
+  @@map("report_fields")
+}
+
+// ---------- Reports ----------
+
+model Report {
+  id                String       @id @default(cuid())
+  thanaId           String
+  reportTypeId      String
+  reportingPeriodId String
+  templateId        String
+  version           Int          @default(1)
+  status            ReportStatus @default(DRAFT)
+
+  thanaSnapshotName  String? // snapshot of thana name at submission
+  branchSnapshotName String? // snapshot of branch name at submission
+
+  sourceReportId    String?  // auto-load source (previous approved report)
+  isApprovedSnapshot Boolean @default(false)
+  approvedAt        DateTime?
+  submittedAt       DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  thana           Thana           @relation(fields: [thanaId], references: [id])
+  reportType      ReportType      @relation(fields: [reportTypeId], references: [id])
+  reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
+  template        ReportTemplate  @relation(fields: [templateId], references: [id])
+
+  sourceReport Report?  @relation("ReportSource", fields: [sourceReportId], references: [id])
+  derivedFrom  Report[] @relation("ReportSource")
+
+  values      ReportValue[]
+  tableRows   ReportTableRow[]
+  revisions   ReportRevision[]
+  approvals   ReportApproval[]
+
+  @@unique([thanaId, reportTypeId, reportingPeriodId, version])
+  @@index([thanaId])
+  @@index([reportingPeriodId])
+  @@index([status])
+  @@map("reports")
+}
+
+model ReportValue {
+  id        String   @id @default(cuid())
+  reportId  String
+  fieldId   String
+  valueText String?
+  valueNum  Decimal? @db.Decimal(18, 4)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  report Report      @relation(fields: [reportId], references: [id])
+  field  ReportField @relation(fields: [fieldId], references: [id])
+
+  @@unique([reportId, fieldId])
+  @@index([reportId])
+  @@map("report_values")
+}
+
+// child table for tabular sub-lists (e.g. কর্মী বৃদ্ধি তালিকা)
+model ReportTableRow {
+  id        String   @id @default(cuid())
+  reportId  String
+  fieldId   String
+  rowIndex  Int
+  rowData   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  report Report      @relation(fields: [reportId], references: [id])
+  field  ReportField @relation(fields: [fieldId], references: [id])
+
+  @@index([reportId, fieldId])
+  @@map("report_table_rows")
+}
+
+model ReportRevision {
+  id              String   @id @default(cuid())
+  reportId        String
+  requestedById   String
+  requestedAt     DateTime @default(now())
+  reason          String
+  targetFieldIds  Json?    // specific fields/sections requested for revision
+  previousValues  Json?    // old vs new comparison
+  newValues       Json?
+  resubmittedAt   DateTime?
+
+  report Report @relation(fields: [reportId], references: [id])
+
+  @@index([reportId])
+  @@map("report_revisions")
+}
+
+model ReportApproval {
+  id          String         @id @default(cuid())
+  reportId    String
+  action      ApprovalAction
+  actorId     String
+  actedAt     DateTime       @default(now())
+  comment     String?
+
+  report Report @relation(fields: [reportId], references: [id])
+
+  @@index([reportId])
+  @@map("report_approvals")
+}
+
+model ReportDeadline {
+  id           String   @id @default(cuid())
+  reportId     String
+  thanaId      String
+  dueAt        DateTime
+  extendedAt   DateTime?
+  extensionReason String?
+  createdAt    DateTime @default(now())
+
+  @@index([thanaId])
+  @@map("report_deadlines")
+}
+
+// ---------- Audit ----------
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  actorId   String?
+  action    AuditAction
+  entity    String
+  entityId  String?
+  meta      Json?
+  ip        String?
+  createdAt DateTime    @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([actorId])
+  @@map("audit_logs")
+}

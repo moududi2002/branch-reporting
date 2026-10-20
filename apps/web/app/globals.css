@@ -1,0 +1,6 @@
+/* apps/web/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { @apply bg-parchment text-gray-900 font-bn; }
