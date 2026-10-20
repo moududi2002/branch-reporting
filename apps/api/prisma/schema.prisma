@@ -100,10 +100,10 @@ model Branch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  thanas            Thana[]
-  users             User[]
-  reportingPeriods  ReportingPeriod[]
-  nameSnapshots     BranchNameSnapshot[]
+  thanas           Thana[]
+  users            User[]
+  reportingPeriods ReportingPeriod[]
+  nameSnapshots    BranchNameSnapshot[]
 
   @@map("branches")
 }
@@ -129,7 +129,7 @@ model Thana {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  branch        Branch             @relation(fields: [branchId], references: [id])
+  branch        Branch              @relation(fields: [branchId], references: [id])
   users         User[]
   reports       Report[]
   nameSnapshots ThanaNameSnapshot[]
@@ -164,8 +164,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  branch    Branch? @relation(fields: [branchId], references: [id])
-  thana     Thana?  @relation(fields: [thanaId], references: [id])
+  branch    Branch?    @relation(fields: [branchId], references: [id])
+  thana     Thana?     @relation(fields: [thanaId], references: [id])
   sessions  Session[]
   auditLogs AuditLog[]
 
@@ -205,19 +205,19 @@ model AcademicSession {
 }
 
 model ReportingPeriod {
-  id                 String       @id @default(cuid())
-  branchId           String
-  academicSessionId  String
-  reportTypeId       String
-  label              String       // e.g. "মার্চ ২০২৪"
-  periodStart        DateTime
-  periodEnd          DateTime
-  submissionDeadline DateTime
-  revisionDeadline   DateTime
-  status             PeriodStatus @default(OPEN)
-  autoCloseOnDeadline Boolean     @default(true)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                  String       @id @default(cuid())
+  branchId            String
+  academicSessionId   String
+  reportTypeId        String
+  label               String // e.g. "মার্চ ২০২৪"
+  periodStart         DateTime
+  periodEnd           DateTime
+  submissionDeadline  DateTime
+  revisionDeadline    DateTime
+  status              PeriodStatus @default(OPEN)
+  autoCloseOnDeadline Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   branch          Branch          @relation(fields: [branchId], references: [id])
   academicSession AcademicSession @relation(fields: [academicSessionId], references: [id])
@@ -241,33 +241,35 @@ model ReportType {
 
   templates        ReportTemplate[]
   reportingPeriods ReportingPeriod[]
+  reports          Report[]
 
   @@map("report_types")
 }
 
 model ReportTemplate {
-  id           String         @id @default(cuid())
+  id           String   @id @default(cuid())
   reportTypeId String
   version      Int
   nameBn       String
-  isActive     Boolean        @default(true)
-  createdAt    DateTime       @default(now())
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
-  reportType ReportType         @relation(fields: [reportTypeId], references: [id])
+  reportType ReportType      @relation(fields: [reportTypeId], references: [id])
   sections   ReportSection[]
   fields     ReportField[]
+  reports    Report[]
 
   @@unique([reportTypeId, version])
   @@map("report_templates")
 }
 
 model ReportSection {
-  id               String   @id @default(cuid())
+  id               String @id @default(cuid())
   reportTemplateId String
   key              String
   titleBn          String
   order            Int
-  layoutMeta       Json?    // rowspan/colspan/vertical/color/grid metadata for print layout
+  layoutMeta       Json? // rowspan/colspan/vertical/color/grid metadata for print layout
 
   reportTemplate ReportTemplate @relation(fields: [reportTemplateId], references: [id])
   fields         ReportField[]
@@ -288,12 +290,15 @@ model ReportField {
   isReadOnly       Boolean         @default(false)
   isRequired       Boolean         @default(false)
   order            Int
-  options          Json?           // for SELECT
-  formula          String?         // expression key for FORMULA rule
-  layoutMeta       Json?           // rowspan/colspan/vertical/header-group metadata
+  options          Json?
+  formula          String?
+  layoutMeta       Json?
 
-  reportTemplate ReportTemplate  @relation(fields: [reportTemplateId], references: [id])
-  section        ReportSection?  @relation(fields: [sectionId], references: [id])
+  reportTemplate ReportTemplate @relation(fields: [reportTemplateId], references: [id])
+  section        ReportSection? @relation(fields: [sectionId], references: [id])
+
+  reportValues    ReportValue[]
+  reportTableRows ReportTableRow[]
 
   @@unique([reportTemplateId, key])
   @@index([sectionId])
@@ -314,12 +319,12 @@ model Report {
   thanaSnapshotName  String? // snapshot of thana name at submission
   branchSnapshotName String? // snapshot of branch name at submission
 
-  sourceReportId    String?  // auto-load source (previous approved report)
-  isApprovedSnapshot Boolean @default(false)
-  approvedAt        DateTime?
-  submittedAt       DateTime?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  sourceReportId     String? // auto-load source (previous approved report)
+  isApprovedSnapshot Boolean   @default(false)
+  approvedAt         DateTime?
+  submittedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   thana           Thana           @relation(fields: [thanaId], references: [id])
   reportType      ReportType      @relation(fields: [reportTypeId], references: [id])
@@ -329,10 +334,10 @@ model Report {
   sourceReport Report?  @relation("ReportSource", fields: [sourceReportId], references: [id])
   derivedFrom  Report[] @relation("ReportSource")
 
-  values      ReportValue[]
-  tableRows   ReportTableRow[]
-  revisions   ReportRevision[]
-  approvals   ReportApproval[]
+  values    ReportValue[]
+  tableRows ReportTableRow[]
+  revisions ReportRevision[]
+  approvals ReportApproval[]
 
   @@unique([thanaId, reportTypeId, reportingPeriodId, version])
   @@index([thanaId])
@@ -376,15 +381,15 @@ model ReportTableRow {
 }
 
 model ReportRevision {
-  id              String   @id @default(cuid())
-  reportId        String
-  requestedById   String
-  requestedAt     DateTime @default(now())
-  reason          String
-  targetFieldIds  Json?    // specific fields/sections requested for revision
-  previousValues  Json?    // old vs new comparison
-  newValues       Json?
-  resubmittedAt   DateTime?
+  id             String    @id @default(cuid())
+  reportId       String
+  requestedById  String
+  requestedAt    DateTime  @default(now())
+  reason         String
+  targetFieldIds Json? // specific fields/sections requested for revision
+  previousValues Json? // old vs new comparison
+  newValues      Json?
+  resubmittedAt  DateTime?
 
   report Report @relation(fields: [reportId], references: [id])
 
@@ -393,12 +398,12 @@ model ReportRevision {
 }
 
 model ReportApproval {
-  id          String         @id @default(cuid())
-  reportId    String
-  action      ApprovalAction
-  actorId     String
-  actedAt     DateTime       @default(now())
-  comment     String?
+  id       String         @id @default(cuid())
+  reportId String
+  action   ApprovalAction
+  actorId  String
+  actedAt  DateTime       @default(now())
+  comment  String?
 
   report Report @relation(fields: [reportId], references: [id])
 
@@ -407,13 +412,13 @@ model ReportApproval {
 }
 
 model ReportDeadline {
-  id           String   @id @default(cuid())
-  reportId     String
-  thanaId      String
-  dueAt        DateTime
-  extendedAt   DateTime?
+  id              String    @id @default(cuid())
+  reportId        String
+  thanaId         String
+  dueAt           DateTime
+  extendedAt      DateTime?
   extensionReason String?
-  createdAt    DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
   @@index([thanaId])
   @@map("report_deadlines")
