@@ -12,7 +12,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" className="font-bold">ব্রাঞ্চ রিপোর্টিং</Link>
           <nav className="flex items-center gap-4 text-sm">
             <Link href="/dashboard">ড্যাশবোর্ড</Link>
-            {user?.role !== 'VIEWER' && <Link href="/reports">রিপোর্ট</Link>}
+
+            {user?.role === 'SUPER_ADMIN' && (
+              <>
+                <Link href="/admin/branches">শাখা ব্যবস্থাপনা</Link>
+                <Link href="/admin/thanas">থানা ব্যবস্থাপনা</Link>
+              </>
+            )}
+
+            {user?.role !== 'VIEWER' && (
+              <Link href="/reports">রিপোর্ট</Link>
+            )}
+            {user?.role === 'SUPER_ADMIN' && (
+                <Link href="/admin/branches">শাখা</Link>
+              )}
+
+              {['SUPER_ADMIN', 'BRANCH_ADMIN'].includes(user?.role ?? '') && (
+                <>
+                  <Link href="/admin/thanas">থানা</Link>
+                  <Link href="/admin/users">ইউজার</Link>
+                </>
+              )}
             <span className="opacity-70">{user?.role}</span>
             <button onClick={logout} className="bg-emerald-dark px-3 py-1 rounded">লগআউট</button>
           </nav>

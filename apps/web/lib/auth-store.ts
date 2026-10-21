@@ -21,7 +21,8 @@ type AuthState = {
 
 export const useAuth = create<AuthState>((set) => ({
   user: null,
-  loading: false,
+  loading: true,
+
   async load() {
     set({ loading: true });
     try {

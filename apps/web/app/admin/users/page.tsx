@@ -66,12 +66,15 @@ function Inner() {
           onChange={(e) => setForm({ ...form, password: e.target.value })} required />
         <select className="border rounded px-2 py-1" value={form.role}
           onChange={(e) => setForm({ ...form, role: e.target.value })}>
-          {user?.role === 'SUPER_ADMIN' && <>
-            <option value="SUPER_ADMIN">Super Admin</option>
-            <option value="BRANCH_ADMIN">Branch Admin</option>
-            <option value="VIEWER">Viewer</option>
-          </>}
-          <option value="THANA_ADMIN">Thana Admin</option>
+              {user?.role === 'SUPER_ADMIN' && (
+                <>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="BRANCH_ADMIN">Branch Admin</option>
+                </>
+              )}
+
+              <option value="THANA_ADMIN">Thana Admin</option>
+              <option value="VIEWER">Viewer</option>
         </select>
         <select className="border rounded px-2 py-1" value={form.branchId}
           onChange={(e) => setForm({ ...form, branchId: e.target.value, thanaId: '' })} required>

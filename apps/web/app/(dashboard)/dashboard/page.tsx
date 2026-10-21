@@ -5,6 +5,7 @@ import { AuthGate } from '@/components/AuthGate';
 import { AppShell } from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   return (
@@ -31,9 +32,59 @@ function BranchOrThanaDashboard() {
     api(`/branches/${user.branchId}/dashboard/summary?periodId=${running.id}`).then(setSummary).catch(() => setSummary(null));
   }, [user, running]);
 
-  if (!user?.branchId) {
-    return <p>আপনার কোনো শাখা assigned নেই। অনুগ্রহ করে Super Admin-এর সাথে যোগাযোগ করুন।</p>;
+    if (user?.role === 'SUPER_ADMIN') {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-emerald">
+          Super Admin ড্যাশবোর্ড
+        </h1>
+
+        <p className="text-sm text-gray-600">
+          এখান থেকে সব শাখা, থানা ও ইউজার পরিচালনা করতে পারবেন।
+        </p>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <a
+            href="/admin/branches"
+            className="rounded-lg bg-white p-5 shadow"
+          >
+            <h2 className="font-semibold">শাখা ব্যবস্থাপনা</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              নতুন শাখা তৈরি ও পরিচালনা করুন।
+            </p>
+          </a>
+
+          <a
+            href="/admin/thanas"
+            className="rounded-lg bg-white p-5 shadow"
+          >
+            <h2 className="font-semibold">থানা ব্যবস্থাপনা</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              যেকোনো শাখার থানা তৈরি ও পরিচালনা করুন।
+            </p>
+          </a>
+
+          <a
+            href="/admin/users"
+            className="rounded-lg bg-white p-5 shadow"
+          >
+            <h2 className="font-semibold">ইউজার ব্যবস্থাপনা</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              সব role-এর ইউজার তৈরি ও পরিচালনা করুন।
+            </p>
+          </a>
+        </div>
+      </div>
+    );
   }
+
+    if (!user?.branchId) {
+      return (
+        <p>
+          আপনার কোনো শাখা assigned নেই। অনুগ্রহ করে Super Admin-এর সাথে যোগাযোগ করুন।
+        </p>
+      );
+    }
 
   return (
     <div className="space-y-6">
