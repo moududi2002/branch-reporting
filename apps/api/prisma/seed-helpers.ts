@@ -29,6 +29,7 @@ export async function field(data: {
   aggregationRule?: AggregationRule;
   options?: any;
   layoutMeta?: any;
+  formula?: string;
 }) {
   return prisma.reportField.upsert({
     where: { reportTemplateId_key: { reportTemplateId: data.templateId, key: data.key } },
@@ -43,6 +44,7 @@ export async function field(data: {
       options: data.options ?? null,
       layoutMeta: data.layoutMeta ?? null,
       sectionId: data.sectionId ?? null,
+      formula: data.formula ?? null,
     },
     create: {
       reportTemplateId: data.templateId,
@@ -57,6 +59,7 @@ export async function field(data: {
       aggregationRule: data.aggregationRule ?? AggregationRule.NONE,
       options: data.options ?? null,
       layoutMeta: data.layoutMeta ?? null,
+      formula: data.formula,
     },
   });
 }

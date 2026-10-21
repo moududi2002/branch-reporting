@@ -25,10 +25,20 @@ export type ActiveRevision = {
 };
 
 export type FormResponse = {
-  report: { id: string; status: ReportStatus; version: number; thanaId: string; reportTypeId: string; reportingPeriodId: string };
+  report: {
+    id: string;
+    status: ReportStatus;
+    version: number;
+    thanaId: string;
+    reportTypeId: string;
+    reportingPeriodId: string;
+    thanaSnapshotName?: string | null;
+    branchSnapshotName?: string | null;
+  };
   template: { id: string; version: number; sections: ReportSection[]; fields: ReportField[] };
   previous: Record<string, any>;
   current: Record<string, any>;
+  computed?: Record<string, number | null>;   // NEW
   tableRows: Record<string, Array<{ rowIndex: number; data: any }>>;
   activeRevision: ActiveRevision | null;
   revisionDeadline: { dueAt: string } | null;

@@ -59,8 +59,9 @@ export function MonthlyGrid({
                     const f = rowsMap.get(row)?.get(c);
                     if (!f) return <td key={c} className="border p-1 text-gray-400">—</td>;
                     const hl = isFieldHighlighted(form, f.id);
-                    const val = form.computed[f.id] ?? form.current[f.id];
-                    const isComputed = form.computed[f.id] != null;
+                    const computed = form.computed ?? {};
+                    const val = computed[f.id] ?? form.current[f.id];
+                    const isComputed = computed[f.id] != null;
                     return (
                       <td key={c} className={`border p-0 ${hl ? 'bg-amber-50' : ''}`}>
                         <input

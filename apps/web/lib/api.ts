@@ -19,7 +19,14 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     'Content-Type': 'application/json',
     ...(init.headers as Record<string, string> ?? {}),
   };
-  if (method !== 'GET') headers['x-csrf-token'] = await ensureCsrf();
+  
+  if (method !== 'GET') {
+  const csrfToken = await ensureCsrf();
+
+  if (csrfToken) {
+    headers['x-csrf-token'] = csrfToken;
+  }
+}
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,

@@ -10,6 +10,6 @@ export const { generateCsrfToken, validateRequest, doubleCsrfProtection } = doub
     secure: process.env.NODE_ENV === 'production',
     path: '/',
   },
-  getTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,
+  getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,
   getSessionIdentifier: (req) => (req as any).user?.id ?? 'anon',
 });

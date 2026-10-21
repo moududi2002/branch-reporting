@@ -35,9 +35,10 @@ export class ValuesController {
     );
 
     // Compute formula values after saving
-    const computed = await this.formula.computeForReport(id);
+  await this.values.upsertValues(id, req.user, body.values, expected);
+  const computed = await this.formula.computeForReport(id);
+  return { ok: true, computed };
 
-    return { ok: true, computed };
   }
 
   @Roles('THANA_ADMIN', 'SUPER_ADMIN')

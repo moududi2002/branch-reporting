@@ -7,9 +7,6 @@ import { generateCsrfToken } from '../common/csrf';
 import { Throttle } from '@nestjs/throttler';
 
 
-@Throttle({ default: { limit: 5, ttl: 60000 } })
-@Post('login')
-
 
 @Controller('auth')
 export class AuthController {
@@ -21,6 +18,7 @@ export class AuthController {
     res.json({ csrfToken: token });
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   async login(@Body() body: { email: string; password: string }, @Req() req: Request, @Res() res: Response) {
     const { token, user } = await this.auth.login(body.email, body.password, req.ip, req.headers['user-agent']);

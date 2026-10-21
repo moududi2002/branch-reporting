@@ -1,4 +1,17 @@
 // apps/api/src/aggregation/dashboard.controller.ts
+import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { ReportStatus } from '@prisma/client';
+import { BadRequestException } from '@nestjs/common';
+
+@UseGuards(AuthGuard, RolesGuard)
+@Controller('branches/:branchId/dashboard')
+export class DashboardController {
+constructor(private readonly prisma: PrismaService) {}
+
 @Roles('SUPER_ADMIN', 'BRANCH_ADMIN', 'VIEWER')
 @Get('summary')
 async summary(@Param('branchId') branchId: string, @Query('periodId') periodId: string) {
@@ -33,4 +46,5 @@ async summary(@Param('branchId') branchId: string, @Query('periodId') periodId: 
     daysToDeadline,
     submissionDeadline: period?.submissionDeadline,
   };
+}
 }
