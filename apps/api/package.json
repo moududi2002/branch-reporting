@@ -23,6 +23,8 @@
     "@nestjs/throttler": "^6.7.1",
     "@prisma/client": "^5.20.0",
     "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
     "csrf-csrf": "^4.0.3",
     "helmet": "^8.3.0",
@@ -32,6 +34,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.5",
+    "@repo/config-typescript": "workspace:^",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
@@ -40,5 +43,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "webpack": "^5.112.0"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

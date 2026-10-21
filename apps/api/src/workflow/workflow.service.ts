@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditAction, ReportStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
 
 @Injectable()
 export class WorkflowService {
@@ -117,7 +119,7 @@ export class WorkflowService {
           reportId,
           requestedById: user.id,
           reason: body.reason,
-          targetFieldIds: body.targetFieldIds ?? null,
+          targetFieldIds: body.targetFieldIds ?? Prisma.DbNull,
           previousValues: currentMap as any,
         },
       });
